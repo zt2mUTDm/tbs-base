@@ -12,6 +12,10 @@ public interface UnitMovedEvent {
 	
 	Map<Integer, Unit> getNewUnits();
 	
-	Integer getActualTile();
+	Integer getTargetTile();
+	
+	boolean hasAttackEvent();
+	
+	UnitAttackedEvent getAttackEvent();
 	
 }

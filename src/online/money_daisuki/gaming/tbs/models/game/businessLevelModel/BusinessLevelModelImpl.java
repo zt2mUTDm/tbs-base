@@ -14,6 +14,7 @@ import online.money_daisuki.api.algorithms.graph.pathfinding.shortest.bruteforce
 import online.money_daisuki.api.base.DataSink;
 import online.money_daisuki.api.base.NullDataSink;
 import online.money_daisuki.api.base.Requires;
+import online.money_daisuki.api.base.models.SetableMutableSingleValueModelImpl;
 import online.money_daisuki.api.utils.CollectDataSink;
 import online.money_daisuki.api.utils.CollectDataSinkImpl;
 import online.money_daisuki.gaming.tbs.models.data.DataModel;
@@ -150,6 +151,8 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		final int initUnitConnection = unit.getViewDirection();
 		
+		final SetableMutableSingleValueModelImpl<UnitAttackedEvent> attackEvent = new SetableMutableSingleValueModelImpl<>();
+		
 		Integer nextTileId = actualTileId;
 		while(!tiles.isEmpty()) {
 			actualTileId = nextTileId;
@@ -162,11 +165,30 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 				return;
 			}
 			
-			final Unit fieldUnit = tileIdToUnitMap.get(nextTileId);
-			if(fieldUnit != null && fieldUnit.getPlayerId() != unit.getPlayerId()) {
+			final TileState state = getTileState(nextTileId);
+			if(!state.canMoveOn()) {
 				unit.setViewDirection(initUnitConnection);
 				callback.sink(new FailedUnitMovedEvent());
 				return;
+			}
+			
+			final Unit fieldUnit = tileIdToUnitMap.get(nextTileId);
+			if(fieldUnit != null) {
+				if(fieldUnit.getPlayerId() != unit.getPlayerId()) {
+					if(state.seeUnits()) {
+						unit.setViewDirection(initUnitConnection);
+						callback.sink(new FailedUnitMovedEvent());
+						return;
+					} else {
+						final UnitAttackedEvent e = fightIfPossible(startTileId, nextTileId, 1);
+						if(e != null) {
+							attackEvent.sink(new UnitAttackedEvent(actualTileId, nextTileId, e.getAttackHp(),
+									e.getDefenseHp()));
+						}
+						nextTileId = actualTileId;
+						break;
+					}
+				}
 			}
 			unit.setViewDirection(connection);
 		}
@@ -214,9 +236,65 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		unit.move(currentPlayerId);
 		
-		callback.sink(new UnitMovedEventImpl(true, nextTileId, newTileStates, newUnits));
+		callback.sink(new UnitMovedEventImpl(true, nextTileId, newTileStates, newUnits, attackEvent));
 	}
 	
+	private UnitAttackedEvent fightIfPossible(final Integer attTile, final Integer defTile, final int distance) {
+		final Unit attUnit = getUnitOnTile(attTile);
+		final Unit defUnit = getUnitOnTile(defTile);
+		
+		final Weapon attWeapon = getFightWeapon(attUnit, defUnit, distance);
+		final Weapon defWeapon = getFightWeapon(defUnit, attUnit, 1);
+		
+		if(attWeapon == null && defWeapon == null) {
+			return(null);
+		}
+		
+		final TileTemplate attTileTemp = data.getWeatherTile(this.tiles.getTileType(attTile)).getTile(currentWeather);
+		final TileTemplate defTileTemp = data.getWeatherTile(this.tiles.getTileType(defTile)).getTile(currentWeather);
+		
+		final UnitTemplate attUnitTemp = attUnit.getTemplate();
+		final UnitTemplate defUnitTemp = defUnit.getTemplate();
+		
+		final int attDef = attUnitTemp.getDefense() + (attUnitTemp.getDrive().terrainDefenseApplicable() ? attTileTemp.getDefensive() : 0);
+		final int defDef = defUnitTemp.getDefense() + (defUnitTemp.getDrive().terrainDefenseApplicable() ? defTileTemp.getDefensive() : 0);
+		
+		final int attWeaponDmg = attWeapon != null ? attWeapon.getStrength() : 0;
+		final int attAtt = (int) (attWeaponDmg + (attWeaponDmg * 0.1 * attUnit.getLevel()));
+		
+		final int defWeaponDmg = defWeapon != null ? defWeapon.getStrength() : 0;
+		final int defAtt = (int) (defWeaponDmg + (defWeaponDmg * 0.1 * defUnit.getLevel()));
+		
+		final int attDmg = Math.max(defAtt - attDef, 0);
+		final int defDmg = Math.max(attAtt - defDef, 0);
+		
+		final int attHp = attUnit.getHp();
+		final int newAttHp = Math.max(attHp - attDmg, 0);
+		if(newAttHp == 0) {
+			tileIdToUnitMap.remove(attTile);
+			removeVisibility(attTile, attUnitTemp, fogOfWarModels.get(players[attUnit.getPlayerId()]),
+					new NullDataSink<>());
+			defUnit.levelUp();
+		} else {
+			attUnit.setHp(newAttHp);
+			attUnit.attack();
+			attUnit.levelUp();
+		}
+		
+		final int defHp = defUnit.getHp();
+		final int newDefHp = Math.max(defHp - defDmg, 0);
+		if(newDefHp == 0) {
+			tileIdToUnitMap.remove(defTile);
+			removeVisibility(defTile, defUnitTemp, fogOfWarModels.get(players[defUnit.getPlayerId()]),
+					new NullDataSink<>());
+			attUnit.levelUp();
+		} else {
+			defUnit.setHp(newDefHp);
+			defUnit.levelUp();
+		}
+		
+		return(new UnitAttackedEvent(attTile, defTile, newAttHp, newDefHp));
+	}
 	@Override
 	public void attackUnit(final Deque<Integer> tiles, final DataSink<? super UnitAttackedEvent> callback) {
 		attackUnit0(new LinkedList<>(tiles), callback);
@@ -237,7 +315,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		}
 		
 		final int tileCount = tiles.size();
-		final Weapon attWeapon = attUnit.getTemplate().getWeapon(0);
+		final Weapon attWeapon = attUnit.getTemplate().getWeapon(0); // TODO
 		if(tileCount < attWeapon.getMinDistance() || tileCount > attWeapon.getMaxDistance()) {
 			callback.sink(UnitAttackedEvent.createFailure());
 			return;
@@ -271,12 +349,12 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		final TileTemplate attTileTemp = data.getWeatherTile(this.tiles.getTileType(attTile)).getTile(currentWeather);
 		final TileTemplate defTileTemp = data.getWeatherTile(this.tiles.getTileType(nextTile)).getTile(currentWeather);
 		
-		final int attWeaponDmg = attUnitTemp.getWeapon(0).getStrength();
+		final int attWeaponDmg = attWeapon.getStrength();
 		final int attAtt = (int) (attWeaponDmg + (attWeaponDmg * 0.1 * attUnit.getLevel()));
 		final int defAtt;
 		if(meele && attWeapon.canGetCounterstriked() && defUnitTemp.getWeaponCount() > 0) {
-			final Weapon defWeapon = getCounterstrikeWeapon(defUnit, attUnit);
-			if(defWeapon != null && defWeapon.canAttack(attUnitTemp.getDrive()) && defWeapon.getMinDistance() >= 1) {
+			final Weapon defWeapon = getFightWeapon(defUnit, attUnit, 1);
+			if(defWeapon != null) {
 				final int defWeaponDmg = defWeapon.getStrength();
 				defAtt = (int) (defWeaponDmg + (defWeaponDmg * 0.1 * defUnit.getLevel()));
 			} else {
@@ -317,16 +395,16 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			defUnit.levelUp();
 		}
 		
-		callback.sink(new UnitAttackedEvent(attUnit, defUnit, newAttHp, newDefHp));
+		callback.sink(new UnitAttackedEvent(attTile, nextTile, newAttHp, newDefHp));
 	}
-	private Weapon getCounterstrikeWeapon(final Unit counterstriker, final Unit otherUnit) {
-		final UnitTemplate counterstrikerUnitTemplate = counterstriker.getTemplate();
-		final Drive otherUnitDrive = otherUnit.getTemplate().getDrive();
+	private Weapon getFightWeapon(final Unit att, final Unit def, final int distance) {
+		final UnitTemplate attUnitTemplate = att.getTemplate();
+		final Drive defUnitDrive = def.getTemplate().getDrive();
 		
 		Weapon best = null;
-		for(int i = 0; i < counterstrikerUnitTemplate.getWeaponCount(); i++) {
-			final Weapon w = counterstrikerUnitTemplate.getWeapon(i);
-			if(w.getMinDistance() == 1 && w.canAttack(otherUnitDrive)) {
+		for(int i = 0, size = attUnitTemplate.getWeaponCount(); i < size; i++) {
+			final Weapon w = attUnitTemplate.getWeapon(i);
+			if(w.canAttack(defUnitDrive) && w.getMinDistance() >= distance && w.getMaxDistance() <= distance) {
 				best = (best == null || best.getStrength() < w.getStrength() ? w : best);
 			}
 		}

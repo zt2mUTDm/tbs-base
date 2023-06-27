@@ -31,19 +31,24 @@ public interface TileStateModel {
 	boolean hasAttackMark(Integer tileId);
 	
 	public enum TileState {
-		VISIBLE(true),
-		INVISIBLE(false),
-		DISABLED(true),
-		INVISIBLE_DISABLED(false),
-		NEVER_SEEN(false);
+		VISIBLE(true, true),
+		INVISIBLE(false, true),
+		DISABLED(true, false),
+		INVISIBLE_DISABLED(false, false),
+		NEVER_SEEN(false, false);
 		
-		private final boolean b;
+		private final boolean seeUnit;
+		private final boolean canMoveOn;
 		
-		private TileState(final boolean b) {
-			this.b = b;
+		private TileState(final boolean seeUnit, final boolean canMoveOn) {
+			this.seeUnit = seeUnit;
+			this.canMoveOn = canMoveOn;
 		}
 		public boolean seeUnits() {
-			return(b);
+			return(seeUnit);
+		}
+		public boolean canMoveOn() {
+			return (canMoveOn);
 		}
 	}
 }

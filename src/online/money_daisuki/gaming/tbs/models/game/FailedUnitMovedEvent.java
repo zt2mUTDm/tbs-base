@@ -10,7 +10,7 @@ public final class FailedUnitMovedEvent implements UnitMovedEvent {
 		return(false);
 	}
 	@Override
-	public Integer getActualTile() {
+	public Integer getTargetTile() {
 		throw new UnsupportedOperationException();
 	}
 	@Override
@@ -20,5 +20,13 @@ public final class FailedUnitMovedEvent implements UnitMovedEvent {
 	@Override
 	public Map<Integer, Unit> getNewUnits() {
 		throw new UnsupportedOperationException();
+	}
+	@Override
+	public boolean hasAttackEvent() {
+		return(false);
+	}
+	@Override
+	public UnitAttackedEvent getAttackEvent() {
+		throw new UnsupportedOperationException("Auto-generated method stub");
 	}
 }
