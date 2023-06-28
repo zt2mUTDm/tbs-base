@@ -62,12 +62,13 @@ public final class BusinessLevelModelLoader implements DataSource<BusinessLevelM
 				continue;
 			}
 			
-			final int hp = (int) unitMap.get("hp").asData().asNumber().asInt();
-			final int tile = (int) unitMap.get("tile").asData().asNumber().asInt();
-			
 			final UnitTemplate temp = data.getUnitTemplate(unitId);
 			
-			final Unit unit = new UnitImpl(temp, playerId, hp);
+			final int hp = (int) unitMap.get("hp").asData().asNumber().asInt();
+			final int fuel = unitMap.containsKey("fuel") ? (int) unitMap.get("hp").asData().asNumber().asInt() : temp.getMaxFuel();
+			final int tile = (int) unitMap.get("tile").asData().asNumber().asInt();
+			
+			final Unit unit = new UnitImpl(temp, playerId, hp, fuel);
 			
 			tileIdToUnitMap.put(tile, unit);
 		}

@@ -18,6 +18,8 @@ public interface Unit {
 	
 	void setHp(int newAttHp);
 	
+	int getFuel();
+	
 	void move(int distance);
 	
 	void attack();

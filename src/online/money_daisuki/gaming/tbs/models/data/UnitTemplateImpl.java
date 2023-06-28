@@ -58,6 +58,11 @@ public final class UnitTemplateImpl implements UnitTemplate {
 	}
 	
 	@Override
+	public int getMaxFuel() {
+		return (maxFuel);
+	}
+	
+	@Override
 	public int getMoveDistance() {
 		return(moveDistance);
 	}
@@ -67,6 +72,7 @@ public final class UnitTemplateImpl implements UnitTemplate {
 		return (drive);
 	}
 	
+	@Override
 	public int getSight() {
 		return (sight);
 	}

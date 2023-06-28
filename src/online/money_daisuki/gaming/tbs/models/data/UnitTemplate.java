@@ -6,6 +6,8 @@ public interface UnitTemplate {
 	
 	int getDefense();
 	
+	int getMaxFuel();
+	
 	int getMoveDistance();
 	
 	Drive getDrive();

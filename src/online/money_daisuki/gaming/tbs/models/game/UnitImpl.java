@@ -8,6 +8,7 @@ public final class UnitImpl implements Unit {
 	private final int playerId;
 	
 	private int hp;
+	private int fuel;
 	
 	private boolean canMove;
 	private boolean canAttack;
@@ -18,10 +19,11 @@ public final class UnitImpl implements Unit {
 	
 	private int level;
 	
-	public UnitImpl(final UnitTemplate template, final int playerId, final int hp) {
+	public UnitImpl(final UnitTemplate template, final int playerId, final int hp, final int fuel) {
 		this.template = Requires.notNull(template, "template == null");
 		this.playerId = Requires.positive(playerId, "playerId == null");
 		this.hp = Requires.positive(hp, "hp == null");
+		this.fuel = Requires.positive(fuel, "fuel == null");
 		
 		reset();
 	}
@@ -49,8 +51,14 @@ public final class UnitImpl implements Unit {
 	}
 	
 	@Override
+	public int getFuel() {
+		return(fuel);
+	}
+	
+	@Override
 	public void move(final int distance) {
 		moveDistanceLeft-= distance;
+		fuel-= distance;
 		canMove = false;
 	}
 	@Override
@@ -95,14 +103,14 @@ public final class UnitImpl implements Unit {
 	
 	@Override
 	public String toString() {
-		return(getClass().getName() + "[template=" + template + ",playerId=" + playerId + ",hp=" + hp + ",canMove=" +
-				canMove + ",canAttack=" + canAttack + ",moveDistanceLeft=" + moveDistanceLeft + ",viewDirection=" +
-				viewDirection + "]");
+		return(getClass().getName() + "[template=" + template + ",playerId=" + playerId + ",hp=" + hp + ",fuel=" + fuel +
+				",canMove=" + canMove + ",canAttack=" + canAttack + ",moveDistanceLeft=" + moveDistanceLeft +
+				",viewDirection=" + viewDirection + "]");
 	}
 	
 	@Override
 	public UnitImpl copy() {
-		final UnitImpl newUnit = new UnitImpl(template, playerId, hp);
+		final UnitImpl newUnit = new UnitImpl(template, playerId, hp, fuel);
 		newUnit.canMove = canMove;
 		newUnit.canAttack = canAttack;
 		newUnit.moveDistanceLeft = moveDistanceLeft;

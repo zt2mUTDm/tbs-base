@@ -153,6 +153,9 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		final SetableMutableSingleValueModelImpl<UnitAttackedEvent> attackEvent = new SetableMutableSingleValueModelImpl<>();
 		
+		int moveCosts = 0;
+		int lastExitCosts = 0;
+		
 		Integer nextTileId = actualTileId;
 		while(!tiles.isEmpty()) {
 			actualTileId = nextTileId;
@@ -160,6 +163,18 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			
 			final int connection = searchConnectedTile(actualTileId, nextTileId);
 			if(connection == -1) {
+				unit.setViewDirection(initUnitConnection);
+				callback.sink(new FailedUnitMovedEvent());
+				return;
+			}
+			
+			final int tileType = this.tiles.getTileType(nextTileId);
+			final TileTemplate tileTemp = data.getWeatherTile(tileType).getTile(currentWeather);
+			
+			moveCosts+= tileTemp.getEnterCosts(unit.getTemplate().getDrive());
+			moveCosts+= lastExitCosts;
+			lastExitCosts = tileTemp.getExitCosts(unit.getTemplate().getDrive());
+			if(moveCosts < 0) {
 				unit.setViewDirection(initUnitConnection);
 				callback.sink(new FailedUnitMovedEvent());
 				return;
@@ -191,6 +206,12 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 				}
 			}
 			unit.setViewDirection(connection);
+		}
+		
+		if(moveCosts > Math.min(unit.getFuel(), unit.getTemplate().getMoveDistance())) {
+			unit.setViewDirection(initUnitConnection);
+			callback.sink(new FailedUnitMovedEvent());
+			return;
 		}
 		
 		final Unit fieldUnit = tileIdToUnitMap.get(nextTileId);
@@ -234,7 +255,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		tileIdToUnitMap.remove(startTileId);
 		tileIdToUnitMap.put(nextTileId, unit);
 		
-		unit.move(currentPlayerId);
+		unit.move(moveCosts);
 		
 		callback.sink(new UnitMovedEventImpl(true, nextTileId, newTileStates, newUnits, attackEvent));
 	}

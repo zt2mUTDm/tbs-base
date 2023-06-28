@@ -53,13 +53,15 @@ public final class LevelModelLoader implements DataSource<LevelModel> {
 	}
 	private void createUnitInstance(final JsonMap unitMap, final Map<Integer, Unit> tileIdToUnitMap) {
 		final int unitId = (int) unitMap.get("id").asData().asNumber().asInt();
-		final int playerId = (int) unitMap.get("player").asData().asNumber().asInt();
-		final int hp = (int) unitMap.get("hp").asData().asNumber().asInt();
-		final int tile = (int) unitMap.get("tile").asData().asNumber().asInt();
-		
 		final UnitTemplate temp = data.getUnitTemplate(unitId);
 		
-		final Unit unit = new UnitImpl(temp, playerId, hp);
+		final int playerId = (int) unitMap.get("player").asData().asNumber().asInt();
+		final int tile = (int) unitMap.get("tile").asData().asNumber().asInt();
+		
+		final int hp = (int) unitMap.get("hp").asData().asNumber().asInt();
+		final int fuel = unitMap.containsKey("fuel") ? (int) unitMap.get("hp").asData().asNumber().asInt() : temp.getMaxFuel();
+		
+		final Unit unit = new UnitImpl(temp, playerId, hp, fuel);
 		
 		tileIdToUnitMap.put(tile, unit);
 	}
