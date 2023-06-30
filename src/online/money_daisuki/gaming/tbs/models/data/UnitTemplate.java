@@ -16,6 +16,8 @@ public interface UnitTemplate {
 	
 	boolean canDriveByShooting();
 	
+	boolean canMoveXorAttack();
+	
 	int getWeaponCount();
 	
 	Weapon getWeapon(int index);

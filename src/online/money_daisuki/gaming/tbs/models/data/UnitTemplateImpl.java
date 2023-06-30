@@ -78,6 +78,11 @@ public final class UnitTemplateImpl implements UnitTemplate {
 	}
 	
 	@Override
+	public boolean canMoveXorAttack() {
+		return (moveXorAttack);
+	}
+	
+	@Override
 	public boolean canDriveByShooting() {
 		return(driveByShooting);
 	}

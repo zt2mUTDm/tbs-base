@@ -8,7 +8,7 @@ public final class UnitImpl implements Unit {
 	private final int playerId;
 	
 	private int hp;
-	private int fuel;
+	private final int fuel;
 	
 	private boolean canMove;
 	private boolean canAttack;
@@ -58,14 +58,20 @@ public final class UnitImpl implements Unit {
 	@Override
 	public void move(final int distance) {
 		moveDistanceLeft-= distance;
-		fuel-= distance;
+		//fuel-= distance;
 		canMove = false;
+		
+		if(template.canMoveXorAttack()) {
+			canAttack = false;
+		}
 	}
 	@Override
 	public void attack() {
 		canAttack = false;
 		if(template.canDriveByShooting()) {
 			canMove = true;
+		} else if(template.canMoveXorAttack()) {
+			canMove = false;
 		}
 	}
 	
