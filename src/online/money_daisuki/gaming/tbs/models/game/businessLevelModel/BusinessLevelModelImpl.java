@@ -153,6 +153,8 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		final SetableMutableSingleValueModelImpl<UnitAttackedEvent> attackEvent = new SetableMutableSingleValueModelImpl<>();
 		
+		final Drive drive = unit.getTemplate().getDrive();
+		
 		int moveCosts = 0;
 		int lastExitCosts = 0;
 		
@@ -171,9 +173,9 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			final int tileType = this.tiles.getTileType(nextTileId);
 			final TileTemplate tileTemp = data.getWeatherTile(tileType).getTile(currentWeather);
 			
-			moveCosts+= tileTemp.getEnterCosts(unit.getTemplate().getDrive());
+			moveCosts+= tileTemp.getEnterCosts(drive);
 			moveCosts+= lastExitCosts;
-			lastExitCosts = tileTemp.getExitCosts(unit.getTemplate().getDrive());
+			lastExitCosts = tileTemp.hasExitCost(drive) ? tileTemp.getExitCosts(drive) : 0;
 			if(moveCosts < 0) {
 				unit.setViewDirection(initUnitConnection);
 				callback.sink(new FailedUnitMovedEvent());
