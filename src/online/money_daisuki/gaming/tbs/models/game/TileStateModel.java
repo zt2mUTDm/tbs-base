@@ -1,5 +1,7 @@
 package online.money_daisuki.gaming.tbs.models.game;
 
+import java.io.Serializable;
+
 public interface TileStateModel {
 	
 	void addEnabled(Integer tileId);
@@ -30,7 +32,7 @@ public interface TileStateModel {
 	
 	boolean hasAttackMark(Integer tileId);
 	
-	public enum TileState {
+	public enum TileState implements Serializable {
 		VISIBLE(true, true),
 		INVISIBLE(false, true),
 		DISABLED(true, false),

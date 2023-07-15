@@ -4,11 +4,11 @@ import online.money_daisuki.api.base.Requires;
 import online.money_daisuki.gaming.tbs.models.data.UnitTemplate;
 
 public final class UnitImpl implements Unit {
-	private final UnitTemplate template;
-	private final int playerId;
+	private UnitTemplate template;
+	private int playerId;
 	
 	private int hp;
-	private final int fuel;
+	private int fuel;
 	
 	private boolean canMove;
 	private boolean canAttack;
@@ -19,6 +19,9 @@ public final class UnitImpl implements Unit {
 	
 	private int level;
 	
+	public UnitImpl() {
+		
+	}
 	public UnitImpl(final UnitTemplate template, final int playerId, final int hp, final int fuel) {
 		this.template = Requires.notNull(template, "template == null");
 		this.playerId = Requires.positive(playerId, "playerId == null");

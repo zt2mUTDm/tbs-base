@@ -1,6 +1,8 @@
 package online.money_daisuki.gaming.tbs.models.data;
 
-public interface UnitTemplate {
+import java.io.Serializable;
+
+public interface UnitTemplate extends Serializable {
 	
 	String getName();
 	
@@ -21,7 +23,5 @@ public interface UnitTemplate {
 	int getWeaponCount();
 	
 	Weapon getWeapon(int index);
-	
-	String getImageUrl(int player, int i);
 	
 }

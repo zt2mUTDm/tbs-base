@@ -28,7 +28,7 @@ public final class LevelModelLoader implements DataSource<LevelModel> {
 	public LevelModel source() {
 		final int maxPlayerCount = (int) map.get("maxPlayerCount").asData().asNumber().asInt();
 		
-		final TileField tiles = new GenericJsonTileFieldLoader(map.get("tiles").asList(), 4).source();
+		final TileField tiles = new GenericJsonTileFieldLoader(map.get("tiles").asMap().get("model").asList(), 4).source();
 		
 		final Map<Integer, Unit> tileIdToUnitMap = createUnits(map.get("units").asList());
 		

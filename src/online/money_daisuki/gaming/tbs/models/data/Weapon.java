@@ -1,6 +1,8 @@
 package online.money_daisuki.gaming.tbs.models.data;
 
-public interface Weapon {
+import java.io.Serializable;
+
+public interface Weapon extends Serializable {
 	
 	String getName();
 	

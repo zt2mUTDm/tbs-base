@@ -1,6 +1,8 @@
 package online.money_daisuki.gaming.tbs.models.data;
 
-public interface Drive {
+import java.io.Serializable;
+
+public interface Drive extends Serializable {
 	
 	String getName();
 	

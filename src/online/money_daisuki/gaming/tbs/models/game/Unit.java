@@ -1,8 +1,10 @@
 package online.money_daisuki.gaming.tbs.models.game;
 
+import java.io.Serializable;
+
 import online.money_daisuki.gaming.tbs.models.data.UnitTemplate;
 
-public interface Unit {
+public interface Unit extends Serializable {
 	
 	boolean canMove();
 	

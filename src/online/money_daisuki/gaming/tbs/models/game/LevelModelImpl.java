@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import online.money_daisuki.api.base.DataSink;
 import online.money_daisuki.api.base.Requires;
 import online.money_daisuki.gaming.tbs.models.data.Weather;
 import online.money_daisuki.gaming.tbs.models.game.TileStateModel.TileState;
@@ -140,16 +139,10 @@ public final class LevelModelImpl implements LevelModel {
 	// Business
 	
 	@Override
-	public void endTurn(final DataSink<? super UnitEndEvent> callback) {
+	public void endTurn(final EndTurnResponse value) {
 		clearUnits();
 		clearTileStates();
 		
-		final int playerCount = players.length;
-		for(currentPlayerId = (currentPlayerId + 1) % playerCount;
-				!players[currentPlayerId].isEnabled();
-				currentPlayerId = (currentPlayerId + 1) % playerCount)
-			;
-		
-		callback.sink(new UnitEndEvent(currentPlayerId));
+		currentPlayerId = value.getNextPlayerId();
 	}
 }

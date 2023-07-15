@@ -11,21 +11,14 @@ public final class TileTemplateImpl implements TileTemplate {
 	private final int defensive;
 	private final Map<Drive, Integer> enterCosts;
 	private final Map<Drive, Integer> exitCosts;
-	private final String visibleImageUrl;
-	private final String invisibleImageUrl;
-	private final String neverseenImageUrl;
 	
 	public TileTemplateImpl(final String name, final int defensive,
 			final Map<Drive, Integer> enterCosts,
-			final Map<Drive, Integer> exitCosts,
-			final String visibleImageUrl, final String invisibleImageUrl, final String neverseenImageUrl) {
+			final Map<Drive, Integer> exitCosts) {
 		this.name = Requires.notNull(name, "name == null");
 		this.defensive = defensive;
 		this.enterCosts = Requires.containsNotNull(new HashMap<>(Requires.notNull(enterCosts, "enterCosts == null")));
 		this.exitCosts = Requires.containsNotNull(new HashMap<>(Requires.notNull(exitCosts, "exitCosts == null")));
-		this.visibleImageUrl = Requires.notNull(visibleImageUrl, "visibleImageUrl == null");
-		this.invisibleImageUrl = Requires.notNull(invisibleImageUrl, "invisibleImageUrl == null");
-		this.neverseenImageUrl = Requires.notNull(neverseenImageUrl, "neverseenImageUrl == null");
 	}
 	
 	@Override
@@ -58,19 +51,6 @@ public final class TileTemplateImpl implements TileTemplate {
 	}
 	
 	@Override
-	public String getVisibleImageUrl() {
-		return (visibleImageUrl);
-	}
-	@Override
-	public String getInvisibleImageUrl() {
-		return (invisibleImageUrl);
-	}
-	@Override
-	public String getNeverseenImageUrl() {
-		return (neverseenImageUrl);
-	}
-	
-	@Override
 	public boolean equals(final Object obj) {
 		if(obj == this) {
 			return(true);
@@ -79,19 +59,16 @@ public final class TileTemplateImpl implements TileTemplate {
 		}
 		final TileTemplateImpl cast = (TileTemplateImpl) obj;
 		return(cast.name.equals(name) && cast.defensive == defensive && cast.enterCosts.equals(enterCosts) &&
-				cast.exitCosts.equals(exitCosts) && cast.visibleImageUrl.equals(visibleImageUrl) &&
-				cast.invisibleImageUrl.equals(invisibleImageUrl) && cast.neverseenImageUrl.equals(neverseenImageUrl));
+				cast.exitCosts.equals(exitCosts));
 	}
 	@Override
 	public int hashCode() {
-		return(Objects.hash(name, defensive, enterCosts, exitCosts, visibleImageUrl, invisibleImageUrl,
-				neverseenImageUrl));
+		return(Objects.hash(name, defensive, enterCosts, exitCosts));
 	}
 	
 	@Override
 	public String toString() {
 		return(getClass().getName() + "[name=" + name + ",defensive=" + defensive + ",enterCosts=" + enterCosts +
-				",exitCosts=" + exitCosts + ",visibleImageUrl=" + visibleImageUrl + ",invisibleImageUrl=" + invisibleImageUrl +
-				",neverseenImageUrl=" + neverseenImageUrl + "]");
+				",exitCosts=" + exitCosts + "]");
 	}
 }

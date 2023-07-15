@@ -15,12 +15,13 @@ import online.money_daisuki.gaming.tbs.models.data.UnitTemplate;
 import online.money_daisuki.gaming.tbs.models.game.FogOfWarModelImpl;
 import online.money_daisuki.gaming.tbs.models.game.GenericJsonTileFieldLoader;
 import online.money_daisuki.gaming.tbs.models.game.Player;
+import online.money_daisuki.gaming.tbs.models.game.Player.PlayerType;
 import online.money_daisuki.gaming.tbs.models.game.TileField;
 import online.money_daisuki.gaming.tbs.models.game.TileStateModel.TileState;
 import online.money_daisuki.gaming.tbs.models.game.Unit;
 import online.money_daisuki.gaming.tbs.models.game.UnitImpl;
 
-public final class BusinessLevelModelLoader implements DataSource<BusinessLevelModel> {
+public final class BusinessLevelModelLoader implements DataSource<LocalBusinessLevelModel> {
 	private final JsonMap map;
 	private final Player[] players;
 	private final DataModel data;
@@ -31,11 +32,11 @@ public final class BusinessLevelModelLoader implements DataSource<BusinessLevelM
 		this.data = Requires.notNull(data, "data == null");
 	}
 	@Override
-	public BusinessLevelModel source() {
+	public LocalBusinessLevelModel source() {
 		//final Map<TileTemplate, TileImages> tileImages = loadTileImages();
 		//final Map<UnitTemplate, BufferedImage[][]> unitImages = loadUnitImages();
 		
-		final TileField tiles = new GenericJsonTileFieldLoader(map.get("tiles").asList(), 4).source();
+		final TileField tiles = new GenericJsonTileFieldLoader(map.get("tiles").asMap().get("model").asList(), 4).source();
 		
 		final Map<Integer, Unit> tileIdToUnitMap = createUnits(map.get("units").asList(), players);
 		
@@ -56,12 +57,12 @@ public final class BusinessLevelModelLoader implements DataSource<BusinessLevelM
 		for(final JsonElement e:unitsList) {
 			final JsonMap unitMap = e.asMap();
 			
-			final int unitId = (int) unitMap.get("id").asData().asNumber().asInt();
 			final int playerId = (int) unitMap.get("player").asData().asNumber().asInt();
-			if(!players[playerId].isEnabled()) {
+			if(players[playerId].getType() == PlayerType.DISABLED) {
 				continue;
 			}
 			
+			final int unitId = (int) unitMap.get("id").asData().asNumber().asInt();
 			final UnitTemplate temp = data.getUnitTemplate(unitId);
 			
 			final int hp = (int) unitMap.get("hp").asData().asNumber().asInt();

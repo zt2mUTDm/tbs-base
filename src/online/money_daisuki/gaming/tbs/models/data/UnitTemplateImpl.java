@@ -8,22 +8,21 @@ import online.money_daisuki.api.base.Requires;
 public final class UnitTemplateImpl implements UnitTemplate {
 	private final String name;
 	private final Weapon[] weapons;
-	private final int defense;
+	private final  int defense;
 	private final int moveDistance;
 	private final Drive drive;
 	private final boolean moveXorAttack;
 	private final boolean canCapturing;
-	private final boolean driveByShooting;
+	private final  boolean driveByShooting;
 	private final int maxFuel;
 	private final int sight;
 	private final int weight;
 	private final int cargo;
-	private final String[][] images;
 	
 	public UnitTemplateImpl(final String name, final Weapon[] weapons, final int defense, final int moveDistance,
 			final Drive drive, final boolean moveXorAttack, final boolean canCapturing,
 			final boolean driveByShooting, final int maxFuel, final int sight, final int weight,
-			final int cargo, final String[][] images) {
+			final int cargo) {
 		this.name = Requires.notNull(name, "name == null");
 		this.weapons = Requires.containsNotNull(Arrays.copyOf(weapons, Requires.notNull(weapons, "weapons == null").length));
 		this.defense = Requires.positive(defense, "defense < 0");
@@ -36,15 +35,6 @@ public final class UnitTemplateImpl implements UnitTemplate {
 		this.sight = Requires.positive(sight, "sight < 0");
 		this.weight = Requires.greaterThanZero(weight, "weight < 0");
 		this.cargo = Requires.positive(cargo, "cargo < 0");
-		this.images = Requires.notNull(copy2DArray(images), "images == null");
-	}
-	private <T> T[][] copy2DArray(final T[][] arr) {
-		final T[][] newArr = Arrays.copyOf(arr, arr.length);
-		for(int i = 0, size = newArr.length; i < size; i++) {
-			final T[] inner = Requires.containsNotNull(Requires.notNull(arr[i]));
-			newArr[i] = Arrays.copyOf(inner, inner.length);
-		}
-		return(newArr);
 	}
 	
 	@Override
@@ -86,10 +76,6 @@ public final class UnitTemplateImpl implements UnitTemplate {
 	public boolean canDriveByShooting() {
 		return(driveByShooting);
 	}
-	@Override
-	public String getImageUrl(final int player, final int i) {
-		return(images[player][i]);
-	}
 	
 	@Override
 	public int getWeaponCount() {
@@ -112,19 +98,18 @@ public final class UnitTemplateImpl implements UnitTemplate {
 				cast.moveDistance == moveDistance && cast.drive.equals(drive) &&
 				cast.moveXorAttack == moveXorAttack && cast.canCapturing == canCapturing &&
 				cast.driveByShooting == driveByShooting && cast.maxFuel == maxFuel && cast.sight == sight &&
-				cast.weight == weight && cast.cargo == cargo && Arrays.deepEquals(cast.images, images));
+				cast.weight == weight && cast.cargo == cargo);
 	}
 	@Override
 	public int hashCode() {
 		return(Objects.hash(name, Arrays.deepHashCode(weapons), defense, moveDistance, drive, moveXorAttack,
-				canCapturing, driveByShooting, maxFuel, sight, weight, cargo, Arrays.deepHashCode(images)));
+				canCapturing, driveByShooting, maxFuel, sight, weight, cargo));
 	}
 	
 	@Override
 	public String toString() {
 		return(getClass().getName() + "[name=" + name + ",weapons=" + Arrays.toString(weapons) + ",defense=" + defense +
 				",moveXorAttack=" + moveXorAttack + ",canCapturing=" + canCapturing + ",driveByShooting=" + driveByShooting +
-				",maxFuel=" + maxFuel + ",sight=" + sight + ",weight=" + weight + ",cargo=" + cargo + ", images=" +
-				Arrays.toString(images) + "]");
+				",maxFuel=" + maxFuel + ",sight=" + sight + ",weight=" + weight + ",cargo=" + cargo + "]");
 	}
 }

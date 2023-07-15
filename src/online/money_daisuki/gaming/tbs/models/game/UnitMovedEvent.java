@@ -1,10 +1,11 @@
 package online.money_daisuki.gaming.tbs.models.game;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import online.money_daisuki.gaming.tbs.models.game.TileStateModel.TileState;
 
-public interface UnitMovedEvent {
+public interface UnitMovedEvent extends Serializable {
 	
 	boolean wasSuccessful();
 	
@@ -16,6 +17,6 @@ public interface UnitMovedEvent {
 	
 	boolean hasAttackEvent();
 	
-	UnitAttackedEvent getAttackEvent();
+	UnitAttackedResponse getAttackEvent();
 	
 }

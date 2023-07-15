@@ -14,10 +14,4 @@ public interface TileTemplate {
 	
 	int getEnterCosts(Drive drive);
 	
-	String getVisibleImageUrl();
-	
-	String getInvisibleImageUrl();
-	
-	String getNeverseenImageUrl();
-	
 }

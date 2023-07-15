@@ -26,7 +26,7 @@ public final class FailedUnitMovedEvent implements UnitMovedEvent {
 		return(false);
 	}
 	@Override
-	public UnitAttackedEvent getAttackEvent() {
+	public UnitAttackedResponse getAttackEvent() {
 		throw new UnsupportedOperationException("Auto-generated method stub");
 	}
 }

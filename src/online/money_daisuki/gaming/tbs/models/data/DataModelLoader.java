@@ -92,15 +92,9 @@ public final class DataModelLoader {
 				loadObjectToIntMap(drives, map.get("exitCost").asMap()) :
 					new HashMap<>();
 		
-		final JsonMap imagesMap = map.get("images").asMap();
-		final String visibleImageUrl = imagesMap.get("visible").asData().asString();
-		final String invisibleImageUrl = imagesMap.get("invisible").asData().asString();
-		final String neverseenImageUrl = imagesMap.get("neverseen").asData().asString();
-		
 		final int defensive = (int) map.get("defensive").asData().asNumber().asInt();
 		
-		return(new TileTemplateImpl(name, defensive, enterCosts, exitCosts, visibleImageUrl,
-				invisibleImageUrl, neverseenImageUrl));
+		return(new TileTemplateImpl(name, defensive, enterCosts, exitCosts));
 	}
 	private WeatherTile[] loadWeatherTiles(final Weather[] weathers, final TileTemplate[] tileTemplates) {
 		final JsonList tileList = map.get("weatherTiles").asList();
@@ -191,18 +185,8 @@ public final class DataModelLoader {
 		final boolean canCapturing = map.get("canCapturing").asData().asBool();
 		final boolean driveByShooting = map.get("driveByShooting").asData().asBool();
 		
-		final JsonList imagesList = map.get("images").asList();
-		
-		final String[][] imageUrls = new String[tileConnectionCount][2]; //TODO
-		for(int i = 0; i < tileConnectionCount; i++) {
-			final JsonList playerImagesList = imagesList.get(i).asList();
-			for(int j = 0; j < 2; j++) {
-				imageUrls[i][j] = playerImagesList.get(j).asData().asString();
-			}
-		}
-		
 		return(new UnitTemplateImpl(name, unitWeapons, defense, moveDistance, drive, moveXorAttack, canCapturing,
-				driveByShooting, maxFuel, sight, weight, cargo, imageUrls));
+				driveByShooting, maxFuel, sight, weight, cargo));
 	}
 	
 	private <T> Map<T, Integer> loadObjectToIntMap(final T[] arr, final JsonMap map) {

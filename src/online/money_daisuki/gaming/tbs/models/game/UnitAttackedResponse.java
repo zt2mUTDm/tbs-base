@@ -1,8 +1,10 @@
 package online.money_daisuki.gaming.tbs.models.game;
 
+import java.io.Serializable;
+
 import online.money_daisuki.api.base.Requires;
 
-public final class UnitAttackedEvent {
+public final class UnitAttackedResponse implements Serializable {
 	private final boolean successful;
 	
 	private final Integer attackTile;
@@ -11,11 +13,11 @@ public final class UnitAttackedEvent {
 	private final int attackHp;
 	private final int defenseHp;
 	
-	public UnitAttackedEvent(final Integer attackTile, final Integer defenseTile, final int attDmg, final int defDmg) {
+	public UnitAttackedResponse(final Integer attackTile, final Integer defenseTile, final int attDmg, final int defDmg) {
 		this(true, Requires.notNull(attackTile, "attackTile == null"), Requires.notNull(defenseTile, "defenseTile == null"),
 				attDmg, defDmg);
 	}
-	private UnitAttackedEvent(final boolean successful, final Integer attackTile, final Integer defenseTile,
+	private UnitAttackedResponse(final boolean successful, final Integer attackTile, final Integer defenseTile,
 			final int attackHp, final int defenseHp) {
 		this.successful = successful;
 		
@@ -50,7 +52,7 @@ public final class UnitAttackedEvent {
 		return (defenseHp);
 	}
 	
-	public static UnitAttackedEvent createFailure() {
-		return(new UnitAttackedEvent(false, null, null, 0, 0));
+	public static UnitAttackedResponse createFailure() {
+		return(new UnitAttackedResponse(false, null, null, 0, 0));
 	}
 }

@@ -1,6 +1,5 @@
 package online.money_daisuki.gaming.tbs.models.game;
 
-import online.money_daisuki.api.base.DataSink;
 import online.money_daisuki.gaming.tbs.models.data.Weather;
 import online.money_daisuki.gaming.tbs.models.game.TileStateModel.TileState;
 
@@ -50,6 +49,6 @@ public interface LevelModel {
 	
 	// Business
 	
-	void endTurn(DataSink<? super UnitEndEvent> callback);
+	void endTurn(final EndTurnResponse value);
 	
 }

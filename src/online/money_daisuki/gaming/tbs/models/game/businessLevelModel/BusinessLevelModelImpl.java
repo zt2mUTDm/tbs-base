@@ -12,6 +12,7 @@ import java.util.Set;
 
 import online.money_daisuki.api.algorithms.graph.pathfinding.shortest.bruteforce.GraphMovecostCalculator;
 import online.money_daisuki.api.base.DataSink;
+import online.money_daisuki.api.base.NoDataListenerContainer;
 import online.money_daisuki.api.base.NullDataSink;
 import online.money_daisuki.api.base.Requires;
 import online.money_daisuki.api.base.models.SetableMutableSingleValueModelImpl;
@@ -23,19 +24,21 @@ import online.money_daisuki.gaming.tbs.models.data.TileTemplate;
 import online.money_daisuki.gaming.tbs.models.data.UnitTemplate;
 import online.money_daisuki.gaming.tbs.models.data.Weapon;
 import online.money_daisuki.gaming.tbs.models.data.Weather;
+import online.money_daisuki.gaming.tbs.models.game.EndTurnResponse;
 import online.money_daisuki.gaming.tbs.models.game.FailedUnitMovedEvent;
 import online.money_daisuki.gaming.tbs.models.game.FogOfWarModel;
 import online.money_daisuki.gaming.tbs.models.game.FogOfWarModelImpl;
+import online.money_daisuki.gaming.tbs.models.game.GameDataReponse;
 import online.money_daisuki.gaming.tbs.models.game.Player;
+import online.money_daisuki.gaming.tbs.models.game.Player.PlayerType;
 import online.money_daisuki.gaming.tbs.models.game.TileField;
 import online.money_daisuki.gaming.tbs.models.game.TileGraphViewCalculatorModel;
 import online.money_daisuki.gaming.tbs.models.game.TileStateModel.TileState;
 import online.money_daisuki.gaming.tbs.models.game.Unit;
-import online.money_daisuki.gaming.tbs.models.game.UnitAttackedEvent;
-import online.money_daisuki.gaming.tbs.models.game.UnitEndEvent;
+import online.money_daisuki.gaming.tbs.models.game.UnitAttackedResponse;
 import online.money_daisuki.gaming.tbs.models.game.UnitMovedEvent;
 import online.money_daisuki.gaming.tbs.models.game.UnitMovedEventImpl;
-import online.money_daisuki.gaming.tbs.models.game.UpdateGameDataEvent;
+import online.money_daisuki.gaming.tbs.models.game.network.WaitForPlayerTurnResponse;
 
 public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 	private final TileField tiles;
@@ -46,6 +49,8 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 	private final DataModel data;
 	
 	private final Weather currentWeather;
+	
+	private final NoDataListenerContainer nextTurnListeners;
 	
 	private int currentPlayerId;
 	private FogOfWarModel currentFogModel;
@@ -66,6 +71,8 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		for(int i = 0, size = tiles.getTileCount(); i < size; i++) {
 			tileIds.add(i);
 		}
+		
+		this.nextTurnListeners = new NoDataListenerContainer();
 		
 		initialFogOfWar();
 	}	
@@ -151,7 +158,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		final int initUnitConnection = unit.getViewDirection();
 		
-		final SetableMutableSingleValueModelImpl<UnitAttackedEvent> attackEvent = new SetableMutableSingleValueModelImpl<>();
+		final SetableMutableSingleValueModelImpl<UnitAttackedResponse> attackEvent = new SetableMutableSingleValueModelImpl<>();
 		
 		final Drive drive = unit.getTemplate().getDrive();
 		
@@ -197,9 +204,9 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 						callback.sink(new FailedUnitMovedEvent());
 						return;
 					} else {
-						final UnitAttackedEvent e = fightIfPossible(startTileId, nextTileId, 1);
+						final UnitAttackedResponse e = fightIfPossible(startTileId, nextTileId, 1);
 						if(e != null) {
-							attackEvent.sink(new UnitAttackedEvent(actualTileId, nextTileId, e.getAttackHp(),
+							attackEvent.sink(new UnitAttackedResponse(actualTileId, nextTileId, e.getAttackHp(),
 									e.getDefenseHp()));
 						}
 						nextTileId = actualTileId;
@@ -262,7 +269,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		callback.sink(new UnitMovedEventImpl(true, nextTileId, newTileStates, newUnits, attackEvent));
 	}
 	
-	private UnitAttackedEvent fightIfPossible(final Integer attTile, final Integer defTile, final int distance) {
+	private UnitAttackedResponse fightIfPossible(final Integer attTile, final Integer defTile, final int distance) {
 		final Unit attUnit = getUnitOnTile(attTile);
 		final Unit defUnit = getUnitOnTile(defTile);
 		
@@ -316,15 +323,15 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			defUnit.levelUp();
 		}
 		
-		return(new UnitAttackedEvent(attTile, defTile, newAttHp, newDefHp));
+		return(new UnitAttackedResponse(attTile, defTile, newAttHp, newDefHp));
 	}
 	@Override
-	public void attackUnit(final Deque<Integer> tiles, final DataSink<? super UnitAttackedEvent> callback) {
+	public void attackUnit(final Deque<Integer> tiles, final DataSink<? super UnitAttackedResponse> callback) {
 		attackUnit0(new LinkedList<>(tiles), callback);
 	}
-	private void attackUnit0(final Deque<Integer> tiles, final DataSink<? super UnitAttackedEvent> callback) {
+	private void attackUnit0(final Deque<Integer> tiles, final DataSink<? super UnitAttackedResponse> callback) {
 		if(tiles.size() <= 1) {
-			callback.sink(UnitAttackedEvent.createFailure());
+			callback.sink(UnitAttackedResponse.createFailure());
 			return;
 		}
 		
@@ -333,14 +340,14 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		
 		final Unit attUnit = tileIdToUnitMap.get(attTile);
 		if(attUnit == null) {
-			callback.sink(UnitAttackedEvent.createFailure());
+			callback.sink(UnitAttackedResponse.createFailure());
 			return;
 		}
 		
 		final int tileCount = tiles.size();
 		final Weapon attWeapon = attUnit.getTemplate().getWeapon(0); // TODO
 		if(tileCount < attWeapon.getMinDistance() || tileCount > attWeapon.getMaxDistance()) {
-			callback.sink(UnitAttackedEvent.createFailure());
+			callback.sink(UnitAttackedResponse.createFailure());
 			return;
 		}
 		
@@ -350,14 +357,14 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			actualTile = nextTile;
 			nextTile = tiles.removeFirst();
 			if(searchConnectedTile(actualTile, nextTile) == -1) {
-				callback.sink(UnitAttackedEvent.createFailure());
+				callback.sink(UnitAttackedResponse.createFailure());
 				return;
 			}
 		}
 		
 		final Unit defUnit = tileIdToUnitMap.get(nextTile);
 		if(attUnit.getPlayerId() == defUnit.getPlayerId()) {
-			callback.sink(UnitAttackedEvent.createFailure());
+			callback.sink(UnitAttackedResponse.createFailure());
 			return;
 		}
 		
@@ -365,7 +372,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 		final UnitTemplate defUnitTemp = defUnit.getTemplate();
 		
 		if(!attWeapon.canAttack(defUnitTemp.getDrive())) {
-			callback.sink(UnitAttackedEvent.createFailure());
+			callback.sink(UnitAttackedResponse.createFailure());
 			return;
 		}
 		
@@ -418,7 +425,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			defUnit.levelUp();
 		}
 		
-		callback.sink(new UnitAttackedEvent(attTile, nextTile, newAttHp, newDefHp));
+		callback.sink(new UnitAttackedResponse(attTile, nextTile, newAttHp, newDefHp));
 	}
 	private Weapon getFightWeapon(final Unit att, final Unit def, final int distance) {
 		final UnitTemplate attUnitTemplate = att.getTemplate();
@@ -435,7 +442,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 	}
 	
 	@Override
-	public void endTurn(final DataSink<? super UnitEndEvent> callback) {
+	public void endTurn(final int playerId, final DataSink<? super EndTurnResponse> callback) {
 		for(final Entry<Integer, Unit> e:tileIdToUnitMap.entrySet()) {
 			final Unit u = e.getValue();
 			if(u.getPlayerId() == currentPlayerId) {
@@ -443,13 +450,23 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			}
 		}
 		
+		addNextTurnListener(new Runnable() {
+			@Override
+			public void run() {
+				if(currentPlayerId == playerId) {
+					callback.sink(new EndTurnResponse(currentPlayerId));
+					removeNextTurnListener(this);
+				}
+			}
+		});
+		
 		for(currentPlayerId = (currentPlayerId + 1) % players.length;
-				!players[currentPlayerId].isEnabled();
+				players[currentPlayerId].getType() == PlayerType.DISABLED;
 				currentPlayerId = (currentPlayerId + 1) % players.length)
 			;
 		currentFogModel = fogOfWarModels.get(players[currentPlayerId]);
 		
-		callback.sink(new UnitEndEvent(currentPlayerId));
+		nextTurnListeners.fireListeners();
 	}
 	
 	private int searchConnectedTile(final Integer actualTileId, final Integer nextTile) {
@@ -467,7 +484,7 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 	}
 	
 	@Override
-	public void getGameData(final DataSink<? super UpdateGameDataEvent> callback) {
+	public void getGameData(final DataSink<? super GameDataReponse> callback) {
 		final Map<Integer, TileState> tileStates = new HashMap<>();
 		final Map<Integer, Unit> visibleUnits = new HashMap<>();
 		
@@ -478,16 +495,42 @@ public final class BusinessLevelModelImpl implements LocalBusinessLevelModel {
 			if(state.seeUnits()) {
 				final Unit unit = getUnitOnTile(tileId);
 				if(unit != null) {
-					visibleUnits.put(tileId, unit);
+					visibleUnits.put(tileId, unit.copy());
 				}
 			}
 		}
 		
-		callback.sink(new UpdateGameDataEvent(tileStates, visibleUnits));
+		callback.sink(new GameDataReponse(tileStates, visibleUnits));
 	}
 	
 	@Override
 	public int getCurrentPlayerId() {
 		return(currentPlayerId);
+	}
+	
+	@Override
+	public void addNextTurnListener(final Runnable l) {
+		nextTurnListeners.addListener(Requires.notNull(l, "l == null"));
+	}
+	@Override
+	public boolean removeNextTurnListener(final Runnable l) {
+		return(nextTurnListeners.removeListener(Requires.notNull(l, "l == null")));
+	}
+	
+	@Override
+	public void waitForPlayerTurn(final int playerId, final DataSink<WaitForPlayerTurnResponse> callback) {
+		if(currentPlayerId == playerId) {
+			callback.sink(new WaitForPlayerTurnResponse(playerId));
+			return;
+		}
+		addNextTurnListener(new Runnable() {
+			@Override
+			public void run() {
+				if(currentPlayerId == playerId) {
+					callback.sink(new WaitForPlayerTurnResponse(playerId));
+					removeNextTurnListener(this);
+				}
+			}
+		});
 	}
 }
